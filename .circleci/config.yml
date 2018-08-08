@@ -44,3 +44,31 @@ jobs:
           root: ~/repo
           paths:
             - build
+
+  dev-deploy:
+    docker:
+      - image: mealplannr/circleci-react-webapp:1.0
+
+    working_directory: ~/repo
+
+    steps:
+
+      - attach_workspace:
+          at: ~/repo
+
+      - run:
+          name: Copy files to S3
+          command: aws s3 sync build/ s3://meal-planner-frontend-app-dev --delete
+
+      - run:
+          name: Invalidate Cloudfront cache
+          command: aws cloudfront create-invalidation --distribution-id EYW4YI3QNQJ5U --paths "/*"
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - build
+      - dev-deploy:
+          requires:
+            - build
